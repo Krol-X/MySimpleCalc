@@ -1,4 +1,4 @@
-##### My Simple Calculator v.1
+##### My Simple Calculator v.1.0
 
 *Written on Lua 5.2 & Python 3.7*
 
