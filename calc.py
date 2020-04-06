@@ -1,78 +1,124 @@
-line = "" # входная строка
-look = 0  # просматриеваемый символ
-cur  = '' # текущий символ
+﻿from traceback import format_exc
 
-def _next(): # string (char)
-	global line, look, cur
-	look += 1
-	if look > len(line):
-		cur = ' '
-	else:
-		cur = line[look-1]
-	return cur
 
-# Требуемая (последовательность) символ(ов) -- ')' + для дальнейших and/or/xor
-def _require(s): # bool
-	for i in range(len(s)):
-		if _next() != s[i]:
-			return False
-	return True
+def compute(s):
+    """Compute a mathematics expression"""
+    line = s  # input string (stream)
+    look = 0  # looked char (next current char)
+    cur = ''  # current char
 
-# Проверка на цифру
-def isDigit(ch): # bool
-	return '0' <= ch and ch <= '9'
+    def next_():  # string (char)
+        """Return next character of the input stream"""
+        nonlocal line, look, cur
+        look += 1
+        if look > len(line):
+            cur = '\0'
+        else:
+            cur = line[look - 1]
+        return cur
 
-# Прототипы:
-def expr(): pass
-def fun1(): pass
-def fun2(): pass
+    def require(s):  # bool
+        """Check input stream for the string"""
+        for i in range(len(s)):
+            if next_() != s[i]:
+                return False
+        return True
 
-# Реализация для целых чисел
-def number(): # int
-	global cur
-	value = ""
-	while isDigit(cur):
-		value = value + cur
-		_next()
-	return int(value)
+    digits = "0123456789"
 
-def fun2(): # int
-	global cur
-	value = 0
-	sign = False
-	if _next() == '+': _next()
-	if cur     == '-':
-		sign = True
-		_next()
-	while cur == '(' or isDigit(cur):
-		if cur == '(':
-			value = expr()
-			_require(')')
-		else:
-			value = number()
-	return value * (sign and -1 or 1)
+    def reqenum(s, _next=False):  # bool
+        """Check input stream for the characters"""
+        if _next:
+            next_()
+        for i in range(len(s)):
+            if cur == s[i]:
+                return True
+        return False
 
-def fun1(): # int
-	global cur
-	value = fun2()
-	while cur == '*' or cur == '/':
-		value = value * ( cur == '*' and fun1() or (1/fun1()) )
-	return value
+    def skip_blank():
+        """Skip blank characters from input stream"""
+        while cur != '\0' and cur <= ' ':
+            next_()
 
-def expr(): # int
-	global cur
-	value = fun1()
-	while cur == '+' or cur == '-':
-		value = value + fun1() * ( cur == '-' and -1 or 1 )
-	return value
+    # def expr(): pass
+    # def fun1(): pass
+    # def fun2(): pass
 
-def main():
-	global line, look
-	while True:
-		line = input()
-		if len(line) == 0: break
-		look = 0
-		print(expr())
+    def number():  # int
+        """Number recognize function"""
+        nonlocal cur
+        result = ""
+        while cur.isdigit():
+            result = result + cur
+            next_()
+        if cur == '.':
+            if result == "":
+                result = "0"
+            result = result + cur
+            assert (reqenum(digits, True))
+            while cur.isdigit():
+                result = result + cur
+                next_()
+        return int(result)
+
+    def fun2():  # int
+        """Expression level 2"""
+        nonlocal cur
+        result, sign = 0, False
+        next_()
+        skip_blank()
+        assert (reqenum("(+-" + digits))
+        if cur == '+': next_()
+        if cur == '-':
+            sign = True
+            next_()
+        skip_blank()
+        while cur == '(' or cur.isdigit():
+            if cur == '(':
+                result = fun0()
+                skip_blank()
+                require(')')
+            else:
+                result = number()
+            skip_blank()
+        return result * (sign and -1 or 1)
+
+    def fun1():  # int
+        """Expression level 1"""
+        nonlocal cur
+        result = fun2()
+        skip_blank()
+        while cur == '*' or cur == '/':
+            result = result * (cur == '*' and fun1() or (1 / fun1()))
+        return result
+
+    def fun0():  # int
+        """Expression level 0"""
+        nonlocal cur
+        result = fun1()
+        skip_blank()
+        while cur == '+' or cur == '-':
+            result = result + (cur == '-' and -1 or 1) * fun1()
+        return result
+
+    try:
+        result = fun0()
+        assert (cur == '\0')
+    except onException:
+        # print(format_exc())
+        print(' ' * (look - 1) + '^ there is error')
+        return None
+    return result
+
+
+def _main():
+    while True:
+        line = input()
+        if len(line) == 0: break
+        result = compute(line)
+        if result:
+            print(result)
+
 
 if __name__ == "__main__":
-	main()
+    _main()
