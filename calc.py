@@ -1,11 +1,15 @@
-﻿_debug = False
+﻿from traceback import format_exc
 
-if _debug:
-    from traceback import format_exc
-
+_debug = False
 _line = ''  # input string (stream)
 _look = 0  # looked char (current next char)
 _cur = ''  # _current char
+
+
+class ParseError(Exception):
+    def __init__(self):
+        self.text = 'Parse error at %d character in "%s"' % (_look, _line)
+        self.n = _look
 
 
 def next_():  # string (char)
@@ -68,7 +72,8 @@ def _number():  # int
         if result == "":
             result = "0"
         result = result + _cur
-        assert (reqenum(_digits, True))
+        if not reqenum(_digits, True):
+            raise ParseError
         while _cur.isdigit():
             result = result + _cur
             next_()
@@ -81,7 +86,8 @@ def _fun2():  # int
     result, sign = 0, False
     next_()
     skip_blank()
-    assert (reqenum("(+-" + _digits))
+    if not reqenum("(+-" + _digits):
+        raise ParseError
     if _cur == '+':
         next_()
     if _cur == '-':
@@ -122,15 +128,10 @@ def _fun0():  # int
 def compute(s):
     """Compute a mathematics expression"""
     global _line, _look, _cur
-    try:
-        _line, _look = s, 0
-        result = _fun0()
-        assert (_cur == '\0')
-    except Exception:
-        if _debug:
-            print(format_exc())
-        print(' ' * (_look - 1) + '^ there is error')
-        return None
+    _line, _look = s, 0
+    result = _fun0()
+    if _cur != '\0':
+        raise ParseError
     return result
 
 
@@ -140,8 +141,19 @@ def compute(s):
 
 if __name__ == "__main__":
     while True:
+        print(">", end='')
         line = input()
         if len(line) == 0: break
-        result = compute(line)
-        if result:
+        try:
+            result = compute(line)
+        except ParseError as ex:
+            print(' ' * ex.n + "^")
+            print(ex.text)
+            if _debug:
+                print(format_exc())
+        except Exception as ex:
+            print("Some exception :(")
+            print(format_exc())
+        else:
             print(result)
+        print()
